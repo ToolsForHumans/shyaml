@@ -1,0 +1,12 @@
+[package]
+name = "shyaml"
+version = "0.3.0"
+authors = ["Clint Byrum <clint@fewbar.com>"]
+
+[dependencies]
+clap = "*"
+serde_json = "*"
+serde_yaml = "*"
+serde = "*"
+serde_derive = "*"
+tempdir = "*"
