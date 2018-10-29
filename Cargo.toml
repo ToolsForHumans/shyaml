@@ -1,7 +1,10 @@
 [package]
 name = "shyaml"
+description = "Command line tool for manipulating markup languages like YAML"
 version = "0.3.0"
 authors = ["Clint Byrum <clint@fewbar.com>"]
+license = "Apache-2.0"
+homepage = "https://github.com/ToolsForHumans/shyaml.git"
 
 [dependencies]
 clap = "*"
