@@ -422,11 +422,11 @@ fn t_node_to_writer_pretty() {
         "a: 1\nb: |\n  line1\n  line2\nc:\n  z: \"linez0\\nlinez1\"\n",
     );
     _test_yaml(
-        "apiVersion: foo/bar\nkind: Deployment\nmetadata:\n  labels:\n    \"k8s-app\": foo\n",
+        "apiVersion: foo/bar\nkind: Deployment\nmetadata:\n  labels:\n    k8s-app: foo\n",
     );
     _test_yaml(
         //"alist:\n  - 99\n  - \"dashed-string\"\n  - amap:\n      akey: zoop\n",
-        "alist:\n  - 99\n  - \"dashed-string\"\n",
+        "alist:\n  - 99\n  - dashed-string\n",
     );
 }
 
@@ -439,7 +439,7 @@ fn keysort(in_path: &str) -> Result<(), Error> {
 #[derive(Deserialize)]
 struct KubeMetadata {
     name: String,
-    namespace: String,
+    namespace: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -457,16 +457,15 @@ fn kubediff(in_path: &str) -> Result<(), Error> {
     };
     let doc: KubeDoc = serde_yaml::from_slice(&yaml_source)?;
     let kind = doc.kind.to_lowercase();
+    let ns_args = match doc.metadata.namespace.clone() {
+        Some(namespace) => vec![String::from("--namespace"), namespace],
+        None => vec![],
+    };
+    let mut args = vec!["get", kind.as_str(), doc.metadata.name.as_str(), "-o", "yaml"];
+    args.extend(ns_args.iter().map(|ref v| v.as_str()));
     let server_source = {
         let mut in_server = Command::new("kubectl");
-        in_server
-            .arg("--namespace")
-            .arg(doc.metadata.namespace)
-            .arg("get")
-            .arg(kind)
-            .arg(doc.metadata.name)
-            .arg("-o")
-            .arg("yaml");
+        in_server.args(&args);
         eprintln!("Running: {:?}", in_server);
         in_server.output()?.stdout
     };
@@ -506,6 +505,9 @@ fn kubediff(in_path: &str) -> Result<(), Error> {
                 md.remove(&serde_yaml::from_str("resourceVersion")?);
                 md.remove(&serde_yaml::from_str("status")?);
                 md.remove(&serde_yaml::from_str("selfLink")?);
+                if doc.metadata.namespace.is_none() {
+                    md.remove(&serde_yaml::from_str("namespace")?);
+                }
             } else {
                 return Err(Error::Other("metadata was not a mapping"));
             }
