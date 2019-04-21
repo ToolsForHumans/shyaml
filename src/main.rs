@@ -501,6 +501,22 @@ fn kubediff(in_path: &str) -> Result<(), Error> {
     if let Some(m) = server_doc.as_mapping_mut() {
         if let Some(md) = m.get_mut(&serde_yaml::from_str("metadata")?) {
             if let Some(md) = md.as_mapping_mut() {
+                let remove_ann = match md.get(&serde_yaml::from_str("annotations")?) {
+                    Some(serde_yaml::Value::Mapping(ann)) => {
+                        if ann.is_empty() {
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                    Some(_) => {
+                        false
+                    },
+                    None => true
+                };
+                if remove_ann {
+                    md.remove(&serde_yaml::from_str("annotations")?);
+                }
                 md.remove(&serde_yaml::from_str("creationTimestamp")?);
                 md.remove(&serde_yaml::from_str("resourceVersion")?);
                 md.remove(&serde_yaml::from_str("status")?);
